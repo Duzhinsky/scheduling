@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from typing import MutableMapping, Tuple, List
-from models.job import MachineId, ActionDuration, JobId, Job
+from job import MachineId, ActionDuration, JobId, Job
 
 
 @dataclass(init=True)
