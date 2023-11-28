@@ -43,6 +43,7 @@ def oneRun(jobs):
         pass
 
     result['bestFitness'] = bestFitness
+    result["Hello"] = "World"
     return result
 
 
