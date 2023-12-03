@@ -47,7 +47,7 @@ def twoParentCrossover(individuals, masks):
                 c1.fitness = yield c1
                 c2.fitness = yield c2
                 # if the best child is better than the best parent
-                if max(p1.fitness, p2.fitness) < max(c1.fitness, c2.fitness):
+                if max(p1.fitness, p2.fitness) > max(c1.fitness, c2.fitness):
                     p1, p2 = c1, c2
             # Overwrite the parents with the modified version
             individuals[i] = p1
@@ -78,18 +78,21 @@ def globalCrossover(individuals, masks):
     # each individual creates a single offspring, which replaces itself
     for individual in individuals:
         for mask in masks:
+            # """
             startingValue = getMaskValue(individual, mask)
             # Find the list of values in the population that differ from
             # the current individual's values for this mask
             setMaskValues(individual, mask, startingValue)
             newFitness = yield individual
             # if the individual improved, update fitness
-            if individual.fitness < newFitness:
+            if individual.fitness > newFitness:
                 individual.fitness = newFitness
             # The individual did not improve, revert changes
             else:
                 setMaskValues(individual, mask, startingValue)
-            """
+            # """
+        """
+            startingValue = getMaskValue(individual, mask)
             options = [value for value in values[mask]
                        if value != startingValue]
             if len(options) > 0:
@@ -102,4 +105,4 @@ def globalCrossover(individuals, masks):
                 # The individual did not improve, revert changes
                 else:
                     setMaskValues(individual, mask, startingValue)
-            """
+        """

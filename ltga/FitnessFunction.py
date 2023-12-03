@@ -36,4 +36,4 @@ class ScheduleFitness(FitnessFunction):
         return order_to_schedule(order)
 
     def evaluate(self, genes):
-        return 1000 - self.genesToSchedule(genes).makespan
+        return self.genesToSchedule(genes).makespan

@@ -119,7 +119,7 @@ class LTGA(object):
         '''
         self.individuals = initialPopulation
         distance = distanceFcn
-        ordering = self.leastLinkedFirst # TODO change
+        ordering = self.smallestFirst # TODO change
         # ordering = Util.classMethods(self)[config["ordering"]]
         crossover = crossoverFcn
         beforeGenerationSet = set(self.individuals)

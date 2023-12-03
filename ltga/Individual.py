@@ -23,7 +23,7 @@ class Individual(object):
 
     def __cmp__(self, other):
         '''
-        Compares to individuals based on their fitness.  Two individuals with
+        Compares to individuals based on their fitness. Two individuals with
         that compare equal do not necessarily have the same genes, just the
         same fitness.
 
