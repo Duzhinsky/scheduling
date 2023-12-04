@@ -1,18 +1,8 @@
-'''
-This module provides an interface for how fitness functions should interact
-with solvers, as well as the definitions for a few benchmark problems
-'''
 from schedule import order_to_schedule
 
-
 class FitnessFunction(object):
-    '''
-    An interface for a fitness function provided to ensure all required
-    functions of a fitness function object are implemented
-    '''
     def evaluate(self, genes):
         raise NotImplementedError()
-
 
 class ScheduleFitness(FitnessFunction):
 

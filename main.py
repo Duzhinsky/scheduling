@@ -1,56 +1,14 @@
 import copy
-import random
-from collections import deque
-from functools import cmp_to_key
-from random import randrange, shuffle
-from typing import List, Deque
-import pickle
+from random import shuffle
+from typing import List
 
 import ltga.Distance
-from data import load_data
 from job import Job
-from ltga import LTGA
-from ltga.Crossover import globalCrossover, twoParentCrossover
+from ltga.Crossover import globalCrossover
 from ltga.FitnessFunction import ScheduleFitness
 from ltga.Individual import Individual
+from ltga.LTGA import LTGA
 from ltga.Mutation import Mutation
-from schedule import order_to_schedule
-
-
-def f2_cmax_johnson_solver(jobs: List[Job]) -> List[Job]:
-    """
-    Solver for the "F2 || C_max" task introduced in the following article:
-
-    S.M. Johnson. Optimal two-and-three-stage production schedules with set-up times included.
-    Naval Research Logistic Quaterly, 1:61–68, 1954
-
-    link: https://www.rand.org/content/dam/rand/pubs/papers/2008/P402.pdf
-
-    :param jobs: list of jobs to optimize schedule
-    :returns: jobs ordered to minimize the makespan. As for F2 an order is equal for both stages, list is 1xN
-    """
-    # Validate input
-    for job in jobs:
-        if len(job.actions) != 2:
-            raise ValueError("Johnson solver is able to solve F2||C_max only. "
-                             f"There is a job with {len(job.actions)} actions, so it couldn't be executed as F2 job")
-
-    # Sort by minimal stage time
-    def jobs_comparator(lhs: Job, rhs: Job) -> int:
-        return min(lhs.actions) - min(rhs.actions)
-
-    sorted_jobs = sorted(jobs, key=cmp_to_key(jobs_comparator))
-    first_stage_jobs: Deque[Job] = deque()
-    second_stage_jobs: Deque[Job] = deque()
-
-    for job in sorted_jobs:
-        if job.actions[0] < job.actions[1]:
-            first_stage_jobs.append(job)
-        else:
-            second_stage_jobs.appendleft(job)
-
-    return list(first_stage_jobs + second_stage_jobs)
-
 
 def makeInitialPopulation(jobs: List[Job], evaluator, pop_size) -> List[Individual]:
     M = len(jobs[0].actions)
@@ -59,41 +17,49 @@ def makeInitialPopulation(jobs: List[Job], evaluator, pop_size) -> List[Individu
     for individual in individuals:
         shuffle(individual.genes)
         individual.fitness = evaluator.evaluate(individual.genes)
-    # print(*individuals)
     return individuals
 
 
 def ltga_run(population, evaluator):
-    config = {
-        "maximumEvaluations": 100000,
-        "maximumFitness": 100000
-    }
-    result = {"evaluations": 0}
-    new_pop = copy.deepcopy(population)
-    optimizer = LTGA().generate(population, evaluator, ltga.Distance.pairwiseDistance, globalCrossover, config)
+    evals = 0
+    max_evals = 100000
+
+    new_pop = sorted(copy.deepcopy(population), key=lambda x: x.fitness)
+    optimizer = LTGA().generate(population, evaluator, ltga.Distance.pairwiseDistance, globalCrossover)
     try:
         individual = next(optimizer)  # Get the first individual
-        while (result['evaluations'] < config["maximumEvaluations"]):
+        while (evals < max_evals):
             fitness = evaluator.evaluate(individual.genes)
-            result['evaluations'] += 1
+            if fitness < new_pop[0].fitness:
+                for i in range(1, len(new_pop)):
+                    new_pop[i] = new_pop[i - 1]
+                new_pop[0] = individual
+            evals += 1
             individual = optimizer.send(fitness)
     except StopIteration:
         pass
-    return population
+    return new_pop
 
 
 def one_run(jobs_data):
     results = []
     evaluator = ScheduleFitness(jobs_data)
     mut = Mutation(evaluator)
-    population = makeInitialPopulation(jobs_data, evaluator, 20)
-    for _ in range(40):
-        population = ltga_run(population, evaluator)
-        population = mut.mutate(population)
-        best = min(population, key=lambda x: x.fitness)
-        results.append(best.fitness)
-    return sorted(results, reverse=True)
-
+    population = makeInitialPopulation(jobs_data, evaluator, 10)
+    final_best = population[0]
+    try:
+        for _ in range(1000):
+            population = ltga_run(population, evaluator)
+            population = mut.mutate(population)
+            population = population[0:7] + makeInitialPopulation(jobs_data, evaluator, 3)
+            best = min(population, key=lambda x: x.fitness)
+            results.append(best.fitness)
+            if best.fitness < final_best.fitness:
+                final_best = best
+            print(len(population), best)
+    except KeyboardInterrupt:
+        pass
+    return results, final_best
 
 # if __name__ == "__main__":
 #     jobs_data = load_data("data2x20.pkl")

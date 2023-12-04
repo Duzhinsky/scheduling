@@ -18,4 +18,4 @@ def load_data(filename):
     return dataset
 
 if __name__ == "__main__":
-    generate_data(20, 2, "data2x20.pkl")
+    generate_data(100, 5, "data5x100.pkl")
