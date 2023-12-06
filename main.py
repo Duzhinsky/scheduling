@@ -1,6 +1,7 @@
 import copy
 from random import shuffle
 from typing import List
+import numpy as np
 
 import ltga.Distance
 from job import Job
@@ -40,6 +41,12 @@ def ltga_run(population, evaluator):
         pass
     return new_pop
 
+def stop_criteria(runs):
+    if (len(runs) <= 100): return False
+    for i in range(max(1, len(runs)- 100), len(runs)):
+        if (runs[i-1] != runs[i]):
+            return False
+    return True
 
 def one_run(jobs_data):
     results = []
@@ -48,7 +55,8 @@ def one_run(jobs_data):
     population = makeInitialPopulation(jobs_data, evaluator, 10)
     final_best = population[0]
     try:
-        for _ in range(1000):
+        it = 0
+        while not stop_criteria(results) and it < 500:
             population = ltga_run(population, evaluator)
             population = mut.mutate(population)
             population = population[0:7] + makeInitialPopulation(jobs_data, evaluator, 3)
@@ -57,6 +65,7 @@ def one_run(jobs_data):
             if best.fitness < final_best.fitness:
                 final_best = best
             print(len(population), best)
+            it += 1
     except KeyboardInterrupt:
         pass
     return results, final_best
